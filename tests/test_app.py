@@ -1,5 +1,5 @@
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 import src.app as app_module
 
@@ -48,7 +48,9 @@ def test_signup_adds_student_to_activity(client, activities):
 
     # Assert
     assert response.status_code == 200
-    assert response.json() == {"message": f"Signed up {email} for {activity_name}"}
+    assert response.json() == {
+        "message": f"Signed up {email} for {activity_name}"
+    }
     assert email in activities[activity_name]["participants"]
 
 
@@ -84,19 +86,21 @@ def test_signup_rejects_unknown_activity(client, activities):
     # Assert
     assert response.status_code == 404
     assert response.json() == {"detail": "Activity not found"}
-    assert "Unknown Club" not in activities
+    assert activity_name not in activities
+
 
 
 def test_signup_requires_email(client, activities):
     # Arrange
     activity_name = "Chess Club"
+    participants_before = activities[activity_name]["participants"].copy()
 
     # Act
     response = client.post(f"/activities/{activity_name}/signup")
 
     # Assert
     assert response.status_code == 422
-    assert activities[activity_name]["participants"] == ["existing@example.com"]
+    assert activities[activity_name]["participants"] == participants_before
 
 
 def test_unregister_removes_student_from_activity(client, activities):
@@ -112,7 +116,9 @@ def test_unregister_removes_student_from_activity(client, activities):
 
     # Assert
     assert response.status_code == 200
-    assert response.json() == {"message": f"Removed {email} from {activity_name}"}
+    assert response.json() == {
+        "message": f"Removed {email} from {activity_name}"
+    }
     assert email not in activities[activity_name]["participants"]
 
 
@@ -120,6 +126,7 @@ def test_unregister_rejects_student_not_signed_up(client, activities):
     # Arrange
     activity_name = "Chess Club"
     email = "not-signed-up@example.com"
+    participants_before = activities[activity_name]["participants"].copy()
 
     # Act
     response = client.delete(
@@ -129,8 +136,10 @@ def test_unregister_rejects_student_not_signed_up(client, activities):
 
     # Assert
     assert response.status_code == 404
-    assert response.json() == {"detail": "Student is not signed up for this activity"}
-    assert activities[activity_name]["participants"] == ["existing@example.com"]
+    assert response.json() == {
+        "detail": "Student is not signed up for this activity"
+    }
+    assert activities[activity_name]["participants"] == participants_before
 
 
 def test_unregister_rejects_unknown_activity(client, activities):
@@ -146,4 +155,4 @@ def test_unregister_rejects_unknown_activity(client, activities):
     # Assert
     assert response.status_code == 404
     assert response.json() == {"detail": "Activity not found"}
-    assert "Unknown Club" not in activities
+    assert activity_name not in activities
